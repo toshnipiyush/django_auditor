@@ -18,5 +18,11 @@ class TestEditLogs(TestCase):
         self.assertEqual(event_count, log_count)
 
     def test_driver_create_logs(self):
+        # Registering log for create
         user = TestModel.objects.create(username="test_user")
         self._assertEqualLogsCount(1, user, EntityAuditLog.CREATED)
+
+        # Registering log for update
+        user.username = "update_user"
+        user.save()
+        self._assertEqualLogsCount(1, user, EntityAuditLog.UPDATED)

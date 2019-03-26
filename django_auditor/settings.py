@@ -49,7 +49,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django_auditor.get_current_user.RequestMiddleware',
+    'django_auditor.middleware.RequestMiddleware',
 ]
 
 ROOT_URLCONF = 'django_auditor.urls'
