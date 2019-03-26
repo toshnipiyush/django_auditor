@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_auditor',
+    'django_auditor.apps.DjangoAuditorConfig',
     'tests'
 ]
 
@@ -49,6 +49,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_auditor.get_current_user.RequestMiddleware',
 ]
 
 ROOT_URLCONF = 'django_auditor.urls'
