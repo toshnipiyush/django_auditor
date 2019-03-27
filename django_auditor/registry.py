@@ -17,7 +17,7 @@ class AuditLogModelRegistry(object):
             if instance.__class__.__name__ in self.include_log_models:
                 fields = instance._meta.fields
                 for field in fields:
-                    entity_log_data = self.create_log_object(instance, field, performed_by)
+                    entity_log_data = self.__create_log_object(instance, field, performed_by)
                     if entity_log_data:
                         entity_log_datas.append(entity_log_data)
         except Exception as ex:
@@ -26,10 +26,10 @@ class AuditLogModelRegistry(object):
             entity_log_datas = []
         return entity_log_datas
 
-    def create_log_object(self, instance, field, performed_by):
+    def __create_log_object(self, instance, field, performed_by):
         entity_log_data = None
         if field.attname not in self.exclude_log_fields:
-            old_value, operation_type = AuditLogModelRegistry.get_old_value(instance, field)
+            old_value, operation_type = AuditLogModelRegistry.__get_old_value(instance, field)
             new_value = getattr(instance, "get_{}_display".format(field.name))() if field.choices else getattr(
                 instance, field.name, None)
 
@@ -47,7 +47,7 @@ class AuditLogModelRegistry(object):
         return entity_log_data
 
     @staticmethod
-    def get_old_value(instance, field):
+    def __get_old_value(instance, field):
         if instance.pk is None:
             operation_type = EntityAuditLog.CREATED
             old_value = None
@@ -61,13 +61,9 @@ class AuditLogModelRegistry(object):
         return old_value, operation_type
 
     @staticmethod
-    def create_logs(logs):
-        log_instances = []
+    def create_logs(instance_objects):
         try:
-            for log in logs:
-                log_instances.append(EntityAuditLog(**log))
-            if log_instances:
-                EntityAuditLog.objects.bulk_create(log_instances)
+            EntityAuditLog.objects.bulk_create([EntityAuditLog(**o) for o in instance_objects])
         except Exception as ex:
             LOG.error(ex, exc_info=True)
             LOG.exception('Creation of audit log failed')
