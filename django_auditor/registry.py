@@ -1,5 +1,6 @@
 import logging
 
+from django_auditor.middleware import current_request
 from django_auditor.models import EntityAuditLog
 
 LOG = logging.getLogger(__name__)
@@ -11,13 +12,15 @@ class AuditLogModelRegistry(object):
         self.include_log_models = include_log_models
         self.exclude_log_fields = exclude_log_fields
 
-    def track_audit_logs_entries(self, instance, performed_by=None):
+    def track_audit_logs_entries(self, instance, is_delete=False):
+        request = current_request()
+        performed_by = request.user.id if request else None
         entity_log_datas = []
         try:
             if instance.__class__.__name__ in self.include_log_models:
                 fields = instance._meta.fields
                 for field in fields:
-                    entity_log_data = self.__create_log_object(instance, field, performed_by)
+                    entity_log_data = self.__create_log_object(instance, field, performed_by, is_delete)
                     if entity_log_data:
                         entity_log_datas.append(entity_log_data)
         except Exception as ex:
@@ -26,12 +29,10 @@ class AuditLogModelRegistry(object):
             entity_log_datas = []
         return entity_log_datas
 
-    def __create_log_object(self, instance, field, performed_by):
+    def __create_log_object(self, instance, field, performed_by, is_delete):
         entity_log_data = None
         if field.attname not in self.exclude_log_fields:
-            old_value, operation_type = AuditLogModelRegistry.__get_old_value(instance, field)
-            new_value = getattr(instance, "get_{}_display".format(field.name))() if field.choices else getattr(
-                instance, field.name, None)
+            old_value, new_value, operation_type = AuditLogModelRegistry.__get_values(instance, field, is_delete)
 
             if old_value != new_value:
                 data = {
@@ -47,10 +48,17 @@ class AuditLogModelRegistry(object):
         return entity_log_data
 
     @staticmethod
-    def __get_old_value(instance, field):
+    def __get_values(instance, field, is_delete):
         if instance.pk is None:
             operation_type = EntityAuditLog.CREATED
             old_value = None
+            new_value = getattr(instance, "get_{}_display".format(field.name))() if field.choices else getattr(
+                instance, field.name, None)
+        elif instance.pk is not None and is_delete:
+            operation_type = EntityAuditLog.DELETED
+            old_value = getattr(instance, "get_{}_display".format(field.name))() if field.choices else getattr(
+                instance, field.name, '')
+            new_value = None
         else:
             operation_type = EntityAuditLog.UPDATED
             old_value = getattr(type(instance).objects.filter(pk=instance.pk).first(), field.name)
@@ -58,7 +66,9 @@ class AuditLogModelRegistry(object):
                 for choice, identifier in field.choices:
                     if str(choice) == old_value:
                         old_value = identifier
-        return old_value, operation_type
+            new_value = getattr(instance, "get_{}_display".format(field.name))() if field.choices else getattr(
+                instance, field.name, None)
+        return old_value, new_value, operation_type
 
     @staticmethod
     def create_logs(instance_objects):
