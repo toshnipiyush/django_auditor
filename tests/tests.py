@@ -32,6 +32,4 @@ class TestEditLogs(TestCase):
 
         # Delete model instance
         user.delete()
-        print(EntityAuditLog.objects.all().values('operation_type', 'new_value', 'old_value', 'fm_entity_type',
-                                                  'fk_entity_id'))
         self._assertEqualLogsCount(1, user, fk_entity_id, EntityAuditLog.DELETED)

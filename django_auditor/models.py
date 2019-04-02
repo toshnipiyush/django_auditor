@@ -22,12 +22,13 @@ class EntityAuditLog(models.Model):
                                        on_delete=CASCADE)
     fk_entity_id = models.PositiveIntegerField(db_column="fk_entity_id", verbose_name="Entity ID")
     attribute = models.CharField(max_length=251, verbose_name="Field Name")
+    attribute_type = models.CharField(max_length=251, verbose_name="Field Type")
     old_value = models.CharField(max_length=251, db_column="old_value", verbose_name="Old Value", null=True, blank=True)
     new_value = models.CharField(max_length=251, db_column="new_value", verbose_name="New Value", null=True, blank=True)
     comments = models.CharField(max_length=1019, db_column="comments",
                                 verbose_name="Comments", null=True, blank=True)
     created_on = models.DateTimeField(verbose_name="Created On", auto_now_add=True)
-    updated_on = models.DateTimeField(verbose_name="Updated On", auto_now_add=True)
+    recorded_on = models.DateTimeField(verbose_name="Recorded On")
     target = GenericForeignKey("fm_entity_type", "fk_entity_id")
 
     class Meta:
