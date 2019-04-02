@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.contrib.admin.actions import delete_selected as delete_selected_
+from django.core.exceptions import PermissionDenied
 
 from django_auditor.models import EntityAuditLog
 
@@ -17,6 +19,19 @@ class EntityAuditLogAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False
+
+
+class DjangoAuditorAdmin(admin.ModelAdmin):
+    actions = ['delete_selected']
+
+    def delete_selected(self, request, queryset):
+        if not self.has_delete_permission(request):
+            raise PermissionDenied
+        if request.POST.get('post'):
+            for obj in queryset:
+                obj.delete()
+        else:
+            return delete_selected_(self, request, queryset)
 
 
 admin.site.register(EntityAuditLog, EntityAuditLogAdmin)
